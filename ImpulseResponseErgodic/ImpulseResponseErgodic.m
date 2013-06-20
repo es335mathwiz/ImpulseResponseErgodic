@@ -2,7 +2,8 @@
 
 (* Created by the Wolfram Workbench Jun 17, 2013 *)
 
-BeginPackage["ImpulseResponseErgodic`", { "umbralCalculus`","NumericAMA`","SymbolicAMA`","JLink`","Combinatorica`"}]
+(* Mathematica Package *)
+BeginPackage["ImpulseResponseErgodic`", { "MatPert`","NumericAMA`"(*,"Combinatorica`"*),"umbralCalculus`"}]
 
 defaultOpenFile[]:=$openFiles[[-1]];
 resetFile[]:=Map[OpenWrite[Close[#]]& , $openFiles]
@@ -27,19 +28,18 @@ AMAEquations::usage = "AMAEquations  "
  
 isAMAModel::usage = "isAMAModel  "
 (* Exported symbols added here with SymbolName::usage *)  
+(*
 If[$OperatingSystem=="Windows",
 	AddToClassPath["s:/tryBenchWindows3.5/Perturbation/javaOutput/"],
-AddToClassPath["/msu/home/m1gsa00/scratch/tryBenchWindows3.5/Perturbation/javaOutput/"]];
-
+AddToClassPath["/msu/home/m1gsa00/scratch/tryBenchWindows3.5/Perturbation/javaOutput/"]];*)
+(*
   LoadJavaClass["gov.frb.ma.msu.MultiIndex",StaticsVisible->True,AllowShortContext->True]
-
+*)
 AMASS::usage = "AMASS  "
 
 initSSGuess::usage = "initSSGuess  "
 
 constructFOFDrvsBDrvs::usage = "constructFOFDrvsBDrvs  "
-
-allLambda::usage = "allLambda  "
 
 diffOrder::usage = "diffOrder  "
 
@@ -185,6 +185,9 @@ isAMAModel[model]^=True;
 getStateVars[model_Symbol]:=
 With[{eqns=AMAEquations[model]},
 With[{allVars=stateVariables[eqns],epsVars=getEpsVars[model]},Complement[allVars,epsVars]]]
+
+getStateVars[eqns_List]:=
+With[{allVars=stateVariables[eqns],epsVars=getEpsVars[model]},Complement[allVars,epsVars]]
 
 isAMAModel[___]:=False;
 
@@ -462,7 +465,7 @@ finalResultForTiming]/;VectorQ[Flatten[AMAHmat[model,opts][[1]]],NumberQ]
 (*for now assume one lead one lag*)
 (*assume that only need to check non zero columns of bmat to determine the state vars*)
 constructFOFDrvsBDrvs[model_Symbol,eqns_List,opts___?OptionQ]:=
-With[{},prepAMAModel[model,eqns,Flatten[opts]];
+With[{},prepAMAModel[model,eqns,opts];
 	With[{fDrvs=ArrayFlatten[{{AMAHmat[model,opts][[1]],AMATheta[model,opts]}}]},
 		model/:outerDrvs[model,opts]=fDrvs;
 		model/:diffOrder[model,opts]=1;
@@ -471,7 +474,7 @@ With[{},prepAMAModel[model,eqns,Flatten[opts]];
 
 fixB[model_Symbol,opts___?OptionQ]:=
 With[{qMat=AMAQmat[model,opts],hMat=AMAHmat[model,opts][[1]]},
-With[{bphif=numericComputeBPhiF[hMat,qMat]},
+With[{bphif=numericComputeBPhiF[hMat,qMat,AMALeads[model]]},(*Print["bphif",bphif];*)
 	model/:AMAFmat[model,opts]=bphif[[3]];
 	nonStochAdjust[model,opts];
 With[{bMat=bphif[[1]](*AMABmat[model,opts]*),phiMat=bphif[[2]](*AMAS0Inv[model,opts]*)},
@@ -563,7 +566,7 @@ doFac[nums_List]:=Apply[Times ,(Map[Factorial,nums])]
 genTerm[vars_List,pows_List]:=(1/doFac[pows])*(Times @@ MapThread[#1^#2&,{vars,pows}])
 
 allPows[numVars_Integer,pow_Integer]:=
-With[{allFacets=allLambda[numVars,#]&/@Range[pow]}, Join @@ allFacets]
+With[{allFacets=(Reverse /@MatPert`allLambda[numVars,#])&/@Range[pow]}, Join @@ allFacets]
 
 genAllProducts[vars_List,pow_Integer]:=With[{allP=allPows[Length[vars],pow]},
 genTerm[vars,#]&/@allP]
@@ -597,7 +600,7 @@ momentQ[var_]:=Or[MatchQ[var,Global`mom[_,_]],momFormQ[var]]
 momFormQ[var_Symbol[_]]:=With[{str=ToString[var]},StringMatchQ[str,RegularExpression["^mom\$eps\$.+"]]]
 
 
-polyToMultiIndexed[thePolys_List]:=
+polysToMultiIndexed[thePolys_List]:=
 With[{theVarsPerm=pertOrder[Union[Flatten[DeleteCases[Variables[thePolys],_?momentQ]]]]},
 With[{oldRules=
 		CoefficientRules[thePolys,theVarsPerm[[1]]]},	
@@ -662,7 +665,7 @@ Range[Length[newVars]]
 	
 theMIsToOrder[numVars_Integer,ord_Integer]:=
 theMIsToOrder/:theMIsToOrder[numVars,ord]=(*memoized*)
-Flatten[Join[Reverse[allLambda[numVars,#]]&/@Range[ord]],1]
+Flatten[Join[Reverse[MatPert`allLambda[numVars,#]]&/@Range[ord]],1]
 
 
 replacePairs[posValPair_?MatrixQ,theRow_Integer]:=
@@ -701,12 +704,12 @@ With[{neq=Length[AMAEquations[model]]},
 ArrayFlatten[{{lagDrvsMat[model],
 	ConstantArray[0,{neq,pascal[innerArgs[model],diffOrder[model,opts]+1]-innerArgs[model]-1}]}}]]
 
-
-allLambda[mm_Integer,nn_Integer]:=Reverse[Compositions[nn,mm]]
-
+(*
+allLambda[mm_Integer,nn_Integer]:=Reverse[Combinatorica`Compositions[nn,mm]]
+*)
 nextInnerDrvsTSymbolic[model_Symbol,diff_Integer,opts___?OptionQ]:=
 model/:nextInnerDrvsTSymbolic[model,diff,opts]=
-With[{nxtLambdas=allLambda[innerArgs[model],diffOrder[model,opts]+1]},
+With[{nxtLambdas=Reverse[MatPert`allLambda[innerArgs[model],diffOrder[model,opts]+1]]},
 	ArrayFlatten[{{innerDrvsT[model,opts],symbDrvs[#,nxtLambdas]&/@modelVars[model]}}]]
 
 nextInnerDrvsTPlusOneSymbolic[model_Symbol,diff_Integer,opts___?OptionQ]:=	
@@ -745,7 +748,7 @@ nextOuterDrvs[model_Symbol,diff_Integer,opts___?OptionQ]:=
 model/:nextOuterDrvs[model,diff,opts]=
 With[{subbedFunc=getSubbedFunction[model]},
 With[{theArg=makeArgList[model]},
-With[{theMIs=allLambda[Length[theArg],diffOrder[model,opts]+1]},
+With[{theMIs=Reverse[MatPert`allLambda[Length[theArg],diffOrder[model,opts]+1]]},
 With[{newDrvs=Transpose[(Derivative[Sequence@@#][subbedFunc][Sequence@@theArg])//.
 	(Join @@ssSolnSubs[model,opts])&/@theMIs]},
 	ArrayFlatten[{{outerDrvs[model,opts],newDrvs}}]]]]]
@@ -868,10 +871,11 @@ hmatLinPtSubs->ergodicMean[model,leaps,theSubs, thisOne]]
 polysToModel[modName_Symbol,polys_List,ssSubs_List,stateRows_List]:=
 With[{mInfo=polysToModelInfo[polys]},
 	With[{epsPart=epsAug[{Global`eps[Global`zz]},4]},(*needs generalization*)
-modName/:ssSolnSubs[modName]=ssSubs;
+modName/:ssSolnSubs[modName]={{},ssSubs};
 modName/:innerDrvsT[modName]=mInfo[[3]];
 modName/:AMAEquations[modName]=polys;
 modName/:diffOrder[modName]=mInfo[[2]];
+modName/:modelVars[modName]=getStateVars[polys];
 modName/:innerDrvsBottomRows[modName]=epsPart;
 modName/:innerArgs[modName]=Length[mInfo[[1,1]]]+1;
 modName/:nonZeroBCols[modName]=stateRows;
