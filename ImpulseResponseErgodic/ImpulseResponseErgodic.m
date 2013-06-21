@@ -3,7 +3,7 @@
 (* Created by the Wolfram Workbench Jun 17, 2013 *)
 
 (* Mathematica Package *)
-BeginPackage["ImpulseResponseErgodic`", { "MatPert`","NumericAMA`"(*,"Combinatorica`"*),"umbralCalculus`"}]
+BeginPackage["ImpulseResponseErgodic`", { "MatPert`","NumericAMA`","umbralCalculus`"}]
 
 defaultOpenFile[]:=$openFiles[[-1]];
 resetFile[]:=Map[OpenWrite[Close[#]]& , $openFiles]
@@ -544,7 +544,7 @@ With[{
 ]]
 
 
-intOut[expr_,aSoln_List,epsVar_Symbol]:=Chop[Expand[expr/.aSoln]/.{epsVar^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar:>0}]
+intOut[expr_,aSoln_List,epsVar_Symbol]:=Chop[Expand[expr/.aSoln]/.{epsVar^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar:>Symbol["Global`mom$"<>ToString[epsVar]][0]}]
 
 intOut[expr_,aSoln_List,{}]:=Expand[expr/.aSoln]
 
@@ -552,7 +552,7 @@ intOut[expr_,aSoln_List,epsVars_List]:=Fold[intOut[#1,Flatten[aSoln],#2]&,Expand
 
 
 intOut[expr_,aSoln_List,(epsVar_Symbol)[Global`t+lead_Integer/;lead>0]]:=Chop[Expand[expr/.aSoln]/.
-	{epsVar[Global`t+lead]^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar[Global`t+lead]:>0}]
+	{epsVar[Global`t+lead]^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar[Global`t+lead]:>Symbol["Global`mom$"<>ToString[epsVar]][0]}]
 
 intOut[expr_,aSoln_List,{}]:=Expand[expr/.aSoln]
 
