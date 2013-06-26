@@ -3,7 +3,7 @@
 (* Created by the Wolfram Workbench Jun 17, 2013 *)
 
 (* Mathematica Package *)
-BeginPackage["ImpulseResponseErgodic`", { "MatPert`","NumericAMA`","umbralCalculus`"}]
+BeginPackage["ImpulseResponseErgodic`", { "MatPert`","NumericAMA`","umbralCalculus`","ProjectionMethodTools`"}]
 
 defaultOpenFile[]:=$openFiles[[-1]];
 resetFile[]:=Map[OpenWrite[Close[#]]& , $openFiles]
@@ -57,7 +57,7 @@ hmatLinPtSubs::usage = "hmatLinPtSubs  "
 
 getAllFutureEps::usage = "getAllFutureEps  "
 
-nxtOne::usage = "nxtOne  "
+ergodicMean::usage = "ergodicMean  "
 
 volterra::usage = "volterra  "
 
@@ -205,7 +205,7 @@ Union[Flatten[Map[aVarKeep[neq,#]&,leadsNeeded]]]
 aVarKeep[neq_Integer,{varNo_Integer,varLeadsNeeded__}]:=
 Map[varNo+neq*(#-1)&,{varLeadsNeeded}]
 
-
+(*
 
 constructFDerivs[theModel_Symbol,opts___?OptionQ]:=
 With[{mFuncStuff=
@@ -244,7 +244,7 @@ Function[xx,Apply[variableExplode[#1,Length[#2]]&,xx]],vMappers]},
 {doExplosions[jaggedFuncVals,forExplode,squLen],
 modNz,modLeads,modEta,nlags}
 ]]]]]]]
-
+*)
 
 theIndex[beta_List]:=index[beta];(*for export*)
 
@@ -260,14 +260,14 @@ pascal/:pascal[cc,kk]=(*memoized*)
 	    If[kk==-1, 0,If[cc==0||kk==0,1,
 	      Binomial[cc+kk,kk]]]
 	  
-
+(*
 variableMapping[longVec_List,shortVec_List]:=
 With[{varNos=Flatten[Map[Position[longVec,#]&,shortVec]]},
 With[{mapper=Function[xx,
 Module[{resVec=Table[0,{Length[longVec]}]},
 resVec[[varNos]]=xx;resVec]]},
 {mapper,varNos}]]
-
+*)
 AMALags[model_Symbol]:=(AMALags[model]^=(-1)*lagsLeads[
 AMAEquations[model]][[1]])/;AMAEquations[model]=!=AMAundefinedModel;
 AMALags[___]:=AMAundefinedModel;
@@ -487,7 +487,7 @@ With[{lilB=bInfo[[2]],zMat=ConstantArray[0,{Length[bMat],1}],
 			model/:innerArgs[model]=Length[finB[[1]]];
 			model/:innerDrvsBottomRows[model]=epsPart;
 			model/:nonZeroBCols[model]=bInfo[[1]];
-			model/:innerDrvsTPlusOne[model,opts]=
+			model/:innerDrvsTPlusOne[model,opts]=lookNow=
 			lambdaFacetDiffOrder[diffOrder[model,opts],innerArgs[model],
 				innerDrvsT[model,opts],
 				Join[innerDrvsT[model,opts][[nonZeroBCols[model]]],
@@ -540,11 +540,12 @@ With[{
 	iDrvstp1=nextInnerDrvsTPlusOneSymbolic[model,diffOrder[model,opts]+1,opts],
 	lDrvs=nextLagDrvs[model,diffOrder[model,opts]+1,opts],
 	iBot=nextInnerDrvsBottomRows[model,diffOrder[model,opts]+1,opts]},
-	Join[lDrvs,iDrvst,iDrvstp1,Drop[iBot,-1]]
+	If[iDrvstp1==Null,Join[lDrvs,iDrvst,Drop[iBot,-1]],
+	Join[lDrvs,iDrvst,iDrvstp1,Drop[iBot,-1]]]
 ]]
 
 
-intOut[expr_,aSoln_List,epsVar_Symbol]:=Chop[Expand[expr/.aSoln]/.{epsVar^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar:>Symbol["Global`mom$"<>ToString[epsVar]][0]}]
+intOut[expr_,aSoln_List,epsVar_Symbol]:=Chop[Expand[expr/.aSoln]/.{epsVar^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar:>Symbol["Global`mom$"<>ToString[epsVar]][1]}]
 
 intOut[expr_,aSoln_List,{}]:=Expand[expr/.aSoln]
 
@@ -552,7 +553,7 @@ intOut[expr_,aSoln_List,epsVars_List]:=Fold[intOut[#1,Flatten[aSoln],#2]&,Expand
 
 
 intOut[expr_,aSoln_List,(epsVar_Symbol)[Global`t+lead_Integer/;lead>0]]:=Chop[Expand[expr/.aSoln]/.
-	{epsVar[Global`t+lead]^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar[Global`t+lead]:>Symbol["Global`mom$"<>ToString[epsVar]][0]}]
+	{epsVar[Global`t+lead]^pp_:>Symbol["Global`mom$"<>ToString[epsVar]][pp],epsVar[Global`t+lead]:>Symbol["Global`mom$"<>ToString[epsVar]][1]}]
 
 intOut[expr_,aSoln_List,{}]:=Expand[expr/.aSoln]
 
@@ -712,13 +713,13 @@ model/:nextInnerDrvsTSymbolic[model,diff,opts]=
 With[{nxtLambdas=Reverse[MatPert`allLambda[innerArgs[model],diffOrder[model,opts]+1]]},
 	ArrayFlatten[{{innerDrvsT[model,opts],symbDrvs[#,nxtLambdas]&/@modelVars[model]}}]]
 
-nextInnerDrvsTPlusOneSymbolic[model_Symbol,diff_Integer,opts___?OptionQ]:=	
-	model/:nextInnerDrvsTPlusOneSymbolic[model,diff,opts]=
+nextInnerDrvsTPlusOneSymbolic[model_Symbol,diff_Integer,opts___?OptionQ]:=Module[{},	
+	model/:nextInnerDrvsTPlusOneSymbolic[model,diff,opts]=lookNow=
 	ArrayFlatten[{{innerDrvsTPlusOne[model,opts],
 			lambdaFacetDiffOrder[diffOrder[model,opts]+1,innerArgs[model],
 				nextInnerDrvsTSymbolic[model,diff,opts],
 				Join[nextInnerDrvsTSymbolic[model,diff,opts][[nonZeroBCols[model]]],
-					nextInnerDrvsBottomRows[model,diff,opts]]]}}];
+					nextInnerDrvsBottomRows[model,diff,opts]]]}}]];
 
 nextInnerDrvsBottomRows[model_Symbol,diff_Integer,opts___?OptionQ]:=
 model/:nextInnerDrvsBottomRows[model,diff,opts]=
@@ -832,7 +833,7 @@ maxEpsLead[someEpsVals_List]:=
 Max[Cases[getAllFutureEps[someEpsVals],_[Global`t+ll_Integer]->ll]]
 
 uniqueEpsHeads[epsVals_List]:=Union[Cases[getAllFutureEps[epsVals],xx_[t+_]->xx]]
-
+(*
 ergodicMean[model_Symbol,
 iterations_Integer,varSubs_List,theOpts___?OptionQ]:=
 With[{fcDrvs=firstCompose[model,innerDrvsT[model,theOpts],theOpts]},
@@ -845,7 +846,7 @@ theSV=getStateVec[model]},
 With[{thePolys=genPolys[theSV,theLinPt-theAdj,diffOrder[model,theOpts],intFarOut],
 zapSV=Join[{Global`Sigma->1},Thread[theSV->0]]},
 thePolys/.Join[zapSV,varSubs]]]]]]]
-
+*)
 
 ergodicMeanProj[model_Symbol,
 iterations_Integer,varSubs_List,theOpts___?OptionQ]:=
@@ -861,11 +862,11 @@ zapSV=Join[{Global`Sigma->1},Thread[theSV->0]]},
 thePolys/.Join[zapSV,varSubs]]]]]]]
 
 
-nxtOne[model_Symbol,theOrder_Integer,leaps_Integer,theSubs_List,thisOne___?OptionQ]:=
+ergodicMean[model_Symbol,theOrder_Integer,leaps_Integer,theSubs_List,thisOne___?OptionQ]:=
 Module[{},
 constructFOFDrvsBDrvs[model, AMAEquations[model], thisOne];
 Table[nextOrderPerturbation[model, thisOne],{theOrder-1}];
-hmatLinPtSubs->ergodicMean[model,leaps,theSubs, thisOne]]
+hmatLinPtSubs->ergodicMean[model,leaps,theSubs, thisOne](*/.theSubs*)]
 
 
 polysToModel[modName_Symbol,polys_List,ssSubs_List,stateRows_List]:=
@@ -876,10 +877,12 @@ modName/:innerDrvsT[modName]=mInfo[[3]];
 modName/:AMAEquations[modName]=polys;
 modName/:diffOrder[modName]=mInfo[[2]];
 modName/:modelVars[modName]=getStateVars[polys];
+modName/:nonStochAdjust[modName]=ConstantArray[0,Length[modelVars[modName]]];
 modName/:innerDrvsBottomRows[modName]=epsPart;
-modName/:innerArgs[modName]=Length[mInfo[[1,1]]]+1;
+modName/:innerArgs[modName]=Length[mInfo[[1,1]]];
 modName/:nonZeroBCols[modName]=stateRows;
-modName/:getStateVector[modName]=Append[mInfo[[1,1]],Global`Sigma];
+modName/:getStateVector[modName]=mInfo[[1,1]];
+modName/:getStateVec[modName]=mInfo[[1,1]];
 modName
 ]]
 

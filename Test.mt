@@ -1,0 +1,167 @@
+(* Mathematica Test File *)
+
+	trySingle = {xx[t] - .3 *xx[t - 1] + 
+   eps[xx][t] + .001* xx[t + 1]};
+    Clear[tryS];
+    constructFOFDrvsBDrvs[tryS, trySingle,theInit = initSSGuess -> {0}];
+Test[
+    ImpulseResponseErgodic`Private`AMAFmat[tryS,initSSGuess->{0}]
+    ,
+    {{-0.0009997001798651133}}
+    ,
+    TestID->"Test-20130624-Q4K3L3"
+]
+Test[
+    ImpulseResponseErgodic`Private`AMALags[tryS]
+    ,
+   1
+    ,
+    TestID->"Test-20130624-S1Y5I8"
+]
+Test[
+    ImpulseResponseErgodic`Private`AMALeads[tryS]
+    ,
+    1
+    ,
+    TestID->"Test-20130624-G2X8F7"
+]
+Test[
+    ImpulseResponseErgodic`Private`AMASoln[tryS,initSSGuess->{0}]
+    ,
+    {{{}, {{-0.3, 1., 0.001}}}, {{0, 1}, {300., -1000.}}, {{{0, 1}, {300., -1000.}}, {1, 2}}, {{-1000.2999100539595, 0.2999100539595929}, {{-0.28726884347387865, 0.9578499942940859}, {0.9999995003001497, 0.000999699680315083}}}, {{-0.28726884347387865, 0.9578499942940859}}, {{0.299910053959534}}, {{-0.3, 1.0002999100539596}}, {{0.9997001798651133}}}
+    ,
+    TestID->"Test-20130624-B4C5A0"
+]
+Test[
+    ImpulseResponseErgodic`Private`AMASSGuess[tryS,initSSGuess->{0}]
+    ,
+    initSSGuess -> {0}
+    ,
+    TestID->"Test-20130624-M8J7A6"
+]
+Test[
+    ImpulseResponseErgodic`Private`AMATheta[tryS,initSSGuess->{0}]
+    ,
+    {{1}}
+    ,
+    TestID->"Test-20130624-U3A7B7"
+]
+Test[
+    ImpulseResponseErgodic`Private`computeSteadyState[tryS,initSSGuess->{0}]
+    ,
+    {xxAMAss -> 0.}
+    ,
+    TestID->"Test-20130624-M8O9R0"
+]
+Test[
+    diffOrder[tryS,initSSGuess->{0}]
+    ,
+    1
+    ,
+    TestID->"Test-20130624-Q7M2B6"
+]
+Test[
+    ImpulseResponseErgodic`Private`getStateVec[tryS]
+    ,
+    {xx[-1+t],eps[xx][t],Sigma}
+    ,
+    TestID->"Test-20130624-P5U7J5"
+]
+Test[
+    ImpulseResponseErgodic`Private`innerArgs[tryS]
+    ,
+    3
+    ,
+    TestID->"Test-20130624-P1S4N8"
+]
+Test[
+    ImpulseResponseErgodic`Private`innerDrvsBottomRows[tryS]
+    ,
+    {{0,0,eps$xx[1+t]},{0,0,1}}
+    ,
+    TestID->"Test-20130624-R8C8V5"
+]
+Test[
+    ImpulseResponseErgodic`Private`innerDrvsT[tryS,initSSGuess->{0}]
+    ,
+    {{0.299910053959534, 0.9997001798651133, 0}}
+    ,
+    TestID->"Test-20130624-B5S4W5"
+]
+Test[
+    ImpulseResponseErgodic`Private`innerDrvsTPlusOne[tryS,initSSGuess->{0}]
+    ,
+    {{0.08994604046601061, 0.299820134886702, 0.9997001798651133*eps$xx[1 + t]}}
+    ,
+    TestID->"Test-20130624-V6A0K0"
+]
+Test[
+   isAMAModel[tryS]
+    ,
+    True
+    ,
+    TestID->"Test-20130624-S5C5I9"
+]
+Test[
+    ImpulseResponseErgodic`Private`lagDrvsMat[tryS]
+    ,
+    {{1, 0, 0}}
+    ,
+    TestID->"Test-20130624-W9Q5A4"
+]
+Test[
+    ImpulseResponseErgodic`Private`modelEps[tryS]
+    ,
+    {eps[xx]}
+    ,
+    TestID->"Test-20130624-A6O6D9"
+]
+Test[
+    ImpulseResponseErgodic`Private`modelVars[tryS]
+    ,
+    {xx}
+    ,
+    TestID->"Test-20130624-P0E5P8"
+]
+Test[
+    ImpulseResponseErgodic`Private`nonStochAdjust[tryS,initSSGuess->{0}]
+    ,
+    {0.}
+    ,
+    TestID->"Test-20130624-M3Z7I6"
+]
+Test[
+    ImpulseResponseErgodic`Private`nonZeroBCols[tryS]
+    ,
+    {1}
+    ,
+    TestID->"Test-20130624-Q5G2C2"
+]
+Test[
+    ImpulseResponseErgodic`Private`outerArgs[tryS]
+    ,
+    4
+    ,
+    TestID->"Test-20130624-O9N1H2"
+]
+Test[
+    ImpulseResponseErgodic`Private`outerDrvs[tryS,initSSGuess->{0}]
+    ,
+    {{-0.3, 1, 0.001, 1}}
+    ,
+    TestID->"Test-20130624-H4M1L0"
+]
+Test[
+    ssSolnSubs[tryS,initSSGuess->{0}]
+    ,
+    {{eps[_][_] -> 0, (ImpulseResponseErgodic`Private`x_Symbol)[t + (_.)] :> Symbol[StringJoin[SymbolName[ImpulseResponseErgodic`Private`x], "AMAss"]]}, {xxAMAss -> 0.}}
+    ,
+    TestID->"Test-20130624-E2T5C5"
+]
+Test[
+    ImpulseResponseErgodic`Private`valAtLinPt[tryS,initSSGuess->{0}]
+    ,
+    {0}
+    ,
+    TestID->"Test-20130624-N3S2Z1"
+]
